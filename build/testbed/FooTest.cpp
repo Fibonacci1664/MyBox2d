@@ -11,6 +11,7 @@ class FooTest : public Test
 public:
 	b2Body* dynamicBody;
 	b2Body* staticBody;
+	b2Body* kinematicBody;
 
 	FooTest()
 	{
@@ -33,11 +34,18 @@ public:
 		staticBodyDef.position.Set(0, 10);		// Set a starting position.
 		staticBodyDef.angle = 0;				// Set a starting angle.
 
-		// Create body
+		// Create a kinematic body
+		b2BodyDef kinBodyDef;
+		kinBodyDef.type = b2_kinematicBody;		// This will be a kinematic body.
+		kinBodyDef.position.Set(-18, 11);		// Set a starting position.
+		kinBodyDef.angle = 0;					// Set a starting angle.
+
+		// Create bodies and add to world
 		dynamicBody = m_world->CreateBody(&dynBodyDef);
 		staticBody = m_world->CreateBody(&staticBodyDef);
+		kinematicBody = m_world->CreateBody(&kinBodyDef);
 
-		// Define body shape
+		// Define bodies shape
 		b2PolygonShape boxShape;
 		boxShape.SetAsBox(1, 1);				// Area = 1 * 1 = 1m^2
 
@@ -52,6 +60,7 @@ public:
 		// Create body fixtures
 		dynamicBody->CreateFixture(&boxFixDef);
 		staticBody->CreateFixture(&boxFixDef);
+		kinematicBody->CreateFixture(&boxFixDef);
 	}
 
 	void setTransform()
@@ -60,13 +69,16 @@ public:
 		//dynamicBody->SetTransform(b2Vec2(10, 20), 1);
 
 		// Using degs
-		dynamicBody->SetTransform(b2Vec2(10, 20), 45 * DEGTORAD);	// 45 deg counter clockwise
+		dynamicBody->SetTransform(b2Vec2(10, 20), 45 * DEGTORAD);	// 45 deg counter-clockwise
 	}
 
 	void setVelocities()
 	{
 		dynamicBody->SetLinearVelocity(b2Vec2(-5, 5));		// Moving up and left 5 units/s
 		dynamicBody->SetAngularVelocity(-90 * DEGTORAD);	// 90 deg per sec clockwise
+
+		kinematicBody->SetLinearVelocity(b2Vec2(3, 0));		// Moving right 3 units per second
+		kinematicBody->SetAngularVelocity(360 * DEGTORAD);	// 1 turn per second counter-clockwise
 	}
 
 	void Step(Settings& settings)
