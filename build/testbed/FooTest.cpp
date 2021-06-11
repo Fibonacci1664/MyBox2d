@@ -10,30 +10,38 @@ class FooTest : public Test
 {
 public:
 	b2Body* dynamicBody;
+	b2Body* staticBody;
 
 	FooTest()
 	{
-		createBody();
+		createBodies();
 		setTransform();
 		setVelocities();
 	}
 
-	void createBody()
+	void createBodies()
 	{
-		// Create body def
-		b2BodyDef myBodyDef;
-		myBodyDef.type = b2_dynamicBody;	// This will be a dynamic body.
-		myBodyDef.position.Set(0, 20);		// Set a starting position.
-		myBodyDef.angle = 0;				// Set a starting angle.
+		// Create dynamic body def
+		b2BodyDef dynBodyDef;
+		dynBodyDef.type = b2_dynamicBody;		// This will be a dynamic body.	
+		dynBodyDef.position.Set(0, 20);			// Set a starting position.
+		dynBodyDef.angle = 0;					// Set a starting angle.
+
+		// Create static body def
+		b2BodyDef staticBodyDef;
+		staticBodyDef.type = b2_staticBody;		// This will be a static body.
+		staticBodyDef.position.Set(0, 10);		// Set a starting position.
+		staticBodyDef.angle = 0;				// Set a starting angle.
 
 		// Create body
-		dynamicBody = m_world->CreateBody(&myBodyDef);
+		dynamicBody = m_world->CreateBody(&dynBodyDef);
+		staticBody = m_world->CreateBody(&staticBodyDef);
 
 		// Define body shape
 		b2PolygonShape boxShape;
-		boxShape.SetAsBox(1, 1);			// Area = 1 * 1 = 1m^2
+		boxShape.SetAsBox(1, 1);				// Area = 1 * 1 = 1m^2
 
-		// Define body fixtures
+		// Define DYNAMIC body fixtures
 		// http://www.iforce2d.net/b2dtut/bodies
 		// Mass = (Area of Fixture * Density of Fixture)
 		// Mass = 1 * 1 = 1kg
@@ -43,6 +51,7 @@ public:
 
 		// Create body fixtures
 		dynamicBody->CreateFixture(&boxFixDef);
+		staticBody->CreateFixture(&boxFixDef);
 	}
 
 	void setTransform()
