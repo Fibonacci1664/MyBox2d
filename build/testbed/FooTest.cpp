@@ -13,11 +13,17 @@ public:
 	b2Body* staticBody;
 	b2Body* kinematicBody;
 
+	b2Vec2 pos;
+	float angle;
+	b2Vec2 vel;
+	float angularVel;
+
 	FooTest()
 	{
 		createBodies();
 		setTransform();
 		setVelocities();
+		//destroyBodies();
 	}
 
 	void createBodies()
@@ -81,6 +87,29 @@ public:
 		kinematicBody->SetAngularVelocity(360 * DEGTORAD);	// 1 turn per second counter-clockwise
 	}
 
+	void getBodyInfo()
+	{
+		pos = dynamicBody->GetPosition();
+		angle = dynamicBody->GetAngle();
+		vel = dynamicBody->GetLinearVelocity();
+		angularVel = dynamicBody->GetAngularVelocity();
+
+		// To iterate over ALL bodies in the world
+		//for (b2Body* body = m_world->GetBodyList(); body; body = body->GetNext())
+		//{
+		//	// Do whatever you need with each of the bodies
+		//}
+	}
+
+	void destroyBodies()
+	{
+		// Destroying bodies like this ensure that all the fixtures and joints
+		// are also destroyed that are attached to them
+		m_world->DestroyBody(dynamicBody);
+		m_world->DestroyBody(staticBody);
+		m_world->DestroyBody(kinematicBody);
+	}
+
 	void Step(Settings& settings)
 	{
 		// Run the default physics and rendering
@@ -88,6 +117,13 @@ public:
 
 		// Show some test in the main screen
 		g_debugDraw.DrawString(5, m_textLine, "This is the foo test");
+		m_textLine += 15;
+
+		getBodyInfo();
+
+		g_debugDraw.DrawString(5, m_textLine, "XPos: %.3f  YPos: %.3f Angle: %.3f", pos.x, pos.y, angle * RADTODEG);
+		m_textLine += 15;
+		g_debugDraw.DrawString(5, m_textLine, "Velocity: %.3f Angular Vel: %.3f", vel.x, vel.y, angularVel * RADTODEG);
 		m_textLine += 15;
 	}
 
