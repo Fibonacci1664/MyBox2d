@@ -9,6 +9,7 @@
 class FooTest : public Test
 {
 public:
+	b2Body* dynamicFrictionBody;
 	b2Body* staticEdgeLineBody;
 	b2Body* dynamicCircleBody;
 	b2Body* dynamicPolyBody;
@@ -23,17 +24,64 @@ public:
 
 	FooTest()
 	{
-		createDynamicCircle();
+		/*createDynamicCircle();
 		createDynamicPolygon();
-		createDynamicBox();
+		createDynamicBox();*/
+		createFrictionTest();
 		createStaticEdgeLine();
-
 
 		/*createStaticBox();
 		createKinematicBox();
 		setTransform();
 		setVelocities();*/
 		//destroyBodies();
+	}
+
+	void cleanUpFixtures()
+	{
+		// If you want to remove a fixture from a body,
+		// call the body’s DestroyFixture function:
+		/*b2Fixture* myFixture = dynamicBody->CreateFixture(&myFixtureDef);
+		...
+		dynamicBody->DestroyFixture(myFixture);*/
+	}
+
+	void getFixtureList()
+	{
+		// To iterate over all the fixture on a particular body
+		//for (b2Fixture* f = body->GetFixtureList(); f; f = f->GetNext())
+		//{
+		//	//do something with the fixture 'f'
+		//}
+
+		// If you know there is only one fixture on the body,
+		// you could just use the first element of the list:
+		//b2Fixture* f = body->GetFixtureList();
+		//do something with the fixture 'f'
+	}
+
+	void createFrictionTest()
+	{
+		b2BodyDef dynFrictionBodyDef;
+		dynFrictionBodyDef.type = b2_dynamicBody;
+		dynFrictionBodyDef.position.Set(0, 20);
+
+		dynamicFrictionBody = m_world->CreateBody(&dynFrictionBodyDef);
+
+		b2PolygonShape polygonShape;
+		b2FixtureDef polyFrictionFixDef;
+		polyFrictionFixDef.shape = &polygonShape;
+		polyFrictionFixDef.density = 1;
+		//polyFrictionFixDef.friction = 1;
+		polyFrictionFixDef.restitution = 1;
+
+		for (int i = 0; i < 4; ++i)
+		{
+			b2Vec2 pos(sinf(i * 90 * DEGTORAD), cosf(i * 90 * DEGTORAD));
+			polygonShape.SetAsBox(1, 1, pos, 0);
+			polyFrictionFixDef.friction = i / 4.0f;
+			dynamicFrictionBody->CreateFixture(&polyFrictionFixDef);
+		}
 	}
 
 	void createStaticEdgeLine()
@@ -46,7 +94,7 @@ public:
 
 		b2EdgeShape edgeLineShape;
 		edgeLineShape.m_vertex1.Set(-15, 0);
-		edgeLineShape.m_vertex2.Set(15, 0);
+		edgeLineShape.m_vertex2.Set(15, 3);
 
 		b2FixtureDef edgeFixture;
 		edgeFixture.shape = &edgeLineShape;
