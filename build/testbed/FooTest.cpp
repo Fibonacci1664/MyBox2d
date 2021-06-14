@@ -9,9 +9,10 @@
 class FooTest : public Test
 {
 public:
-	b2Body* dynamicBoxBody;
+	b2Body* staticEdgeLineBody;
 	b2Body* dynamicCircleBody;
-	b2Body* polyDynamicBody;
+	b2Body* dynamicPolyBody;
+	b2Body* dynamicBoxBody;
 	b2Body* staticBody;
 	b2Body* kinematicBody;
 
@@ -22,12 +23,70 @@ public:
 
 	FooTest()
 	{
+		createDynamicCircle();
+		createDynamicPolygon();
 		createDynamicBox();
-		createStaticBox();
+		createStaticEdgeLine();
+
+
+		/*createStaticBox();
 		createKinematicBox();
 		setTransform();
-		setVelocities();
+		setVelocities();*/
 		//destroyBodies();
+	}
+
+	void createStaticEdgeLine()
+	{
+		b2BodyDef staticEdgeBodyDef;
+		staticEdgeBodyDef.type = b2_staticBody;
+		staticEdgeBodyDef.position.Set(0, 0);
+
+		staticEdgeLineBody = m_world->CreateBody(&staticEdgeBodyDef);
+
+		b2EdgeShape edgeLineShape;
+		edgeLineShape.m_vertex1.Set(-15, 0);
+		edgeLineShape.m_vertex2.Set(15, 0);
+
+		b2FixtureDef edgeFixture;
+		edgeFixture.shape = &edgeLineShape;
+
+		staticEdgeLineBody->CreateFixture(&edgeFixture);
+	}
+
+	void createDynamicPolygon()
+	{
+		// There is a limit of 8 vertices per polygon, must be a covex shape and
+		// vertices must be specified in counter-clockwise order
+		// http://www.iforce2d.net/b2dtut/fixtures
+		b2Vec2 vertices[5];
+		vertices[0].Set(-1 + 10, 2);
+		vertices[1].Set(-1 + 10, 0);
+		vertices[2].Set(0 + 10, -3);
+		vertices[3].Set(1 + 10, 0);
+		vertices[4].Set(1 + 10, 1);
+
+		b2BodyDef dynPolyBodyDef;
+		dynPolyBodyDef.type = b2_dynamicBody;
+		dynPolyBodyDef.position.Set(0, 20);
+
+		dynamicPolyBody = m_world->CreateBody(&dynPolyBodyDef);
+
+		b2PolygonShape polyShape;
+		polyShape.Set(vertices, 5);		// Pass the array to the shape
+
+		b2FixtureDef polyFixtureDef;
+		polyFixtureDef.shape = &polyShape;
+
+		// This will NOT appear to change the speed at which things fall
+		// through the "air" as unless air resistance if also simulated then
+		// the simulation is essentially a vacuum and ALL object regardless of
+		// weight fall at exactly the same speed in a vacuum.
+		// Feather and Bowling Ball experiment.
+		polyFixtureDef.density = 300;
+
+		//dynamicPolyBody->CreateFixture(&polyFixtureDef);
+		dynamicCircleBody->CreateFixture(&polyFixtureDef);
 	}
 
 	void createDynamicCircle()
@@ -49,8 +108,8 @@ public:
 		// Define circle fixture/s
 		b2FixtureDef circleFixDef;
 		circleFixDef.shape = &dynCircleShape;
-		circleFixDef.density = 1;
-
+		circleFixDef.density = 100;
+		
 		// Create the fixture
 		dynamicCircleBody->CreateFixture(&circleFixDef);	
 	}
@@ -60,7 +119,7 @@ public:
 		// Create dynamic body def
 		b2BodyDef dynBodyDef;
 		dynBodyDef.type = b2_dynamicBody;		// This will be a dynamic body.	
-		dynBodyDef.position.Set(0, 20);		// Set a starting position.
+		dynBodyDef.position.Set(10, 20);		// Set a starting position.
 		dynBodyDef.angle = 0;					// Set a starting angle.
 
 		// Create bodies and add to world
@@ -68,7 +127,7 @@ public:
 
 		// Define bodies shape
 		b2PolygonShape boxShape;
-		boxShape.SetAsBox(1, 1);				// Area = 1 * 1 = 1m^2
+		boxShape.SetAsBox(2, 1, b2Vec2(20, 0), 0);				// Area = 1 * 1 = 1m^2
 
 		// Define DYNAMIC body fixtures
 		// http://www.iforce2d.net/b2dtut/bodies
@@ -78,10 +137,11 @@ public:
 		// Define the boxes fixture/s
 		b2FixtureDef boxFixDef;
 		boxFixDef.shape = &boxShape;
-		boxFixDef.density = 1;
+		boxFixDef.density = 200;
 
 		// Create body fixtures
-		dynamicBoxBody->CreateFixture(&boxFixDef);
+		//dynamicBoxBody->CreateFixture(&boxFixDef);
+		dynamicCircleBody->CreateFixture(&boxFixDef);
 	}
 
 	void createStaticBox()
@@ -180,7 +240,7 @@ public:
 		g_debugDraw.DrawString(5, m_textLine, "This is the foo test");
 		m_textLine += 15;
 
-		getBodyInfo();
+		//getBodyInfo();
 
 		g_debugDraw.DrawString(5, m_textLine, "XPos: %.3f  YPos: %.3f Angle: %.3f", pos.x, pos.y, angle * RADTODEG);
 		m_textLine += 15;
