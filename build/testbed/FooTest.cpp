@@ -9,7 +9,9 @@
 class FooTest : public Test
 {
 public:
-	b2Body* dynamicBody;
+	b2Body* dynamicBoxBody;
+	b2Body* dynamicCircleBody;
+	b2Body* polyDynamicBody;
 	b2Body* staticBody;
 	b2Body* kinematicBody;
 
@@ -20,36 +22,49 @@ public:
 
 	FooTest()
 	{
-		createBodies();
+		createDynamicBox();
+		createStaticBox();
+		createKinematicBox();
 		setTransform();
 		setVelocities();
 		//destroyBodies();
 	}
 
-	void createBodies()
+	void createDynamicCircle()
 	{
 		// Create dynamic body def
 		b2BodyDef dynBodyDef;
 		dynBodyDef.type = b2_dynamicBody;		// This will be a dynamic body.	
-		dynBodyDef.position.Set(0, 20);			// Set a starting position.
-		dynBodyDef.angle = 0;					// Set a starting angle.
-
-		// Create static body def
-		b2BodyDef staticBodyDef;
-		staticBodyDef.type = b2_staticBody;		// This will be a static body.
-		staticBodyDef.position.Set(0, 10);		// Set a starting position.
-		staticBodyDef.angle = 0;				// Set a starting angle.
-
-		// Create a kinematic body
-		b2BodyDef kinBodyDef;
-		kinBodyDef.type = b2_kinematicBody;		// This will be a kinematic body.
-		kinBodyDef.position.Set(-18, 11);		// Set a starting position.
-		kinBodyDef.angle = 0;					// Set a starting angle.
+		dynBodyDef.position.Set(-10, 20);		// Set a starting position.
+		//dynBodyDef.angle = 0;					// Set a starting angle.
 
 		// Create bodies and add to world
-		dynamicBody = m_world->CreateBody(&dynBodyDef);
-		staticBody = m_world->CreateBody(&staticBodyDef);
-		kinematicBody = m_world->CreateBody(&kinBodyDef);
+		dynamicCircleBody = m_world->CreateBody(&dynBodyDef);
+		
+		// Define bodies shape
+		b2CircleShape dynCircleShape;
+		dynCircleShape.m_p.Set(0, 0);
+		dynCircleShape.m_radius = 1;
+
+		// Define circle fixture/s
+		b2FixtureDef circleFixDef;
+		circleFixDef.shape = &dynCircleShape;
+		circleFixDef.density = 1;
+
+		// Create the fixture
+		dynamicCircleBody->CreateFixture(&circleFixDef);	
+	}
+
+	void createDynamicBox()
+	{		
+		// Create dynamic body def
+		b2BodyDef dynBodyDef;
+		dynBodyDef.type = b2_dynamicBody;		// This will be a dynamic body.	
+		dynBodyDef.position.Set(0, 20);		// Set a starting position.
+		dynBodyDef.angle = 0;					// Set a starting angle.
+
+		// Create bodies and add to world
+		dynamicBoxBody = m_world->CreateBody(&dynBodyDef);
 
 		// Define bodies shape
 		b2PolygonShape boxShape;
@@ -59,14 +74,60 @@ public:
 		// http://www.iforce2d.net/b2dtut/bodies
 		// Mass = (Area of Fixture * Density of Fixture)
 		// Mass = 1 * 1 = 1kg
+
+		// Define the boxes fixture/s
 		b2FixtureDef boxFixDef;
 		boxFixDef.shape = &boxShape;
 		boxFixDef.density = 1;
 
 		// Create body fixtures
-		dynamicBody->CreateFixture(&boxFixDef);
-		staticBody->CreateFixture(&boxFixDef);
-		kinematicBody->CreateFixture(&boxFixDef);
+		dynamicBoxBody->CreateFixture(&boxFixDef);
+	}
+
+	void createStaticBox()
+	{
+		// Create static body def
+		b2BodyDef staticBodyDef;
+		staticBodyDef.type = b2_staticBody;		// This will be a static body.
+		staticBodyDef.position.Set(0, 10);		// Set a starting position.
+		//staticBodyDef.angle = 0;				// Set a starting angle.
+
+		// Create the body
+		staticBody = m_world->CreateBody(&staticBodyDef);
+
+		// Define bodies shape
+		b2PolygonShape boxShape;
+		boxShape.SetAsBox(1, 1);
+
+		// Define static bodies fixture/s
+		b2FixtureDef staticBoxFixDef;
+		staticBoxFixDef.shape = &boxShape;
+		staticBoxFixDef.density = 1;
+
+		staticBody->CreateFixture(&staticBoxFixDef);
+	}
+
+	void createKinematicBox()
+	{
+		// Create a kinematic body
+		b2BodyDef kinBodyDef;
+		kinBodyDef.type = b2_kinematicBody;		// This will be a kinematic body.
+		kinBodyDef.position.Set(-18, 11);		// Set a starting position.
+		//kinBodyDef.angle = 0;					// Set a starting angle.
+
+		// Create the kinematic body
+		kinematicBody = m_world->CreateBody(&kinBodyDef);
+
+		// Define bodies shape
+		b2PolygonShape boxShape;
+		boxShape.SetAsBox(1, 1);
+
+		// Define static bodies fixture/s
+		b2FixtureDef kinematicBoxFixDef;
+		kinematicBoxFixDef.shape = &boxShape;
+		kinematicBoxFixDef.density = 1;
+
+		kinematicBody->CreateFixture(&kinematicBoxFixDef);
 	}
 
 	void setTransform()
@@ -75,13 +136,13 @@ public:
 		//dynamicBody->SetTransform(b2Vec2(10, 20), 1);
 
 		// Using degs
-		dynamicBody->SetTransform(b2Vec2(10, 20), 45 * DEGTORAD);	// 45 deg counter-clockwise
+		dynamicBoxBody->SetTransform(b2Vec2(10, 20), 45 * DEGTORAD);	// 45 deg counter-clockwise
 	}
 
 	void setVelocities()
 	{
-		dynamicBody->SetLinearVelocity(b2Vec2(-5, 5));		// Moving up and left 5 units/s
-		dynamicBody->SetAngularVelocity(-90 * DEGTORAD);	// 90 deg per sec clockwise
+		dynamicBoxBody->SetLinearVelocity(b2Vec2(-5, 5));		// Moving up and left 5 units/s
+		dynamicBoxBody->SetAngularVelocity(-90 * DEGTORAD);	// 90 deg per sec clockwise
 
 		kinematicBody->SetLinearVelocity(b2Vec2(3, 0));		// Moving right 3 units per second
 		kinematicBody->SetAngularVelocity(360 * DEGTORAD);	// 1 turn per second counter-clockwise
@@ -89,10 +150,10 @@ public:
 
 	void getBodyInfo()
 	{
-		pos = dynamicBody->GetPosition();
-		angle = dynamicBody->GetAngle();
-		vel = dynamicBody->GetLinearVelocity();
-		angularVel = dynamicBody->GetAngularVelocity();
+		pos = dynamicBoxBody->GetPosition();
+		angle = dynamicBoxBody->GetAngle();
+		vel = dynamicBoxBody->GetLinearVelocity();
+		angularVel = dynamicBoxBody->GetAngularVelocity();
 
 		// To iterate over ALL bodies in the world
 		//for (b2Body* body = m_world->GetBodyList(); body; body = body->GetNext())
@@ -105,9 +166,9 @@ public:
 	{
 		// Destroying bodies like this ensure that all the fixtures and joints
 		// are also destroyed that are attached to them
-		m_world->DestroyBody(dynamicBody);
-		m_world->DestroyBody(staticBody);
-		m_world->DestroyBody(kinematicBody);
+		m_world->DestroyBody(dynamicBoxBody);
+		/*m_world->DestroyBody(staticBody);
+		m_world->DestroyBody(kinematicBody);*/
 	}
 
 	void Step(Settings& settings)
