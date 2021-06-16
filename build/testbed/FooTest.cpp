@@ -9,6 +9,9 @@
 class FooTest : public Test
 {
 public:
+	// Keep track of 3 bodies
+	b2Body* forcesBodies[3];
+
 	b2Body* dynamicFrictionBody;
 	b2Body* staticEdgeLineBody;
 	b2Body* dynamicCircleBody;
@@ -17,6 +20,8 @@ public:
 	b2Body* staticBody;
 	b2Body* kinematicBody;
 
+	bool forceOn;
+	bool torqueOn;
 	b2Vec2 pos;
 	float angle;
 	b2Vec2 vel;
@@ -24,10 +29,14 @@ public:
 
 	FooTest()
 	{
+		forceOn = false;
+		torqueOn = false;
+
 		/*createDynamicCircle();
 		createDynamicPolygon();
 		createDynamicBox();*/
-		createFrictionTest();
+		//createFrictionTest();
+		forcesImpulseTest();
 		createStaticEdgeLine();
 
 		/*createStaticBox();
@@ -60,6 +69,72 @@ public:
 		//do something with the fixture 'f'
 	}
 
+	virtual void Keyboard(int key)
+	{
+		
+
+		switch (key)
+		{
+			case 'Q':
+			{
+				forceOn = !forceOn;
+				break;
+			}
+			case 'W':
+			{
+				// Apply immediate force upwards
+				forcesBodies[1]->ApplyLinearImpulse(b2Vec2(0, 50), forcesBodies[1]->GetWorldPoint(b2Vec2(1, 1)), true);
+				break;
+			}
+			case 'E':
+			{
+				// Teleport or 'warp' to a new location
+				forcesBodies[2]->SetTransform(b2Vec2(10, 20), 0);
+				break;
+			}
+			case 'A':
+			{
+				torqueOn = !torqueOn;
+				break;
+			}
+			case 'S':
+			{
+				// Apply immediate spin counter-clockwise
+				forcesBodies[1]->ApplyAngularImpulse(20, true);
+				break;
+			}
+			default:
+			{
+				// Run default behaviour
+				Test::Keyboard(key);
+			}
+		}
+	}
+
+	void forcesImpulseTest()
+	{
+		// Bodies def
+		b2BodyDef dynForcesBodyDef;
+		dynForcesBodyDef.type = b2_dynamicBody;
+
+		// Shape def
+		b2PolygonShape polyShape;
+		polyShape.SetAsBox(1, 1);		// A 2x2 rect, half height/width remember
+
+		// Fixture def
+		b2FixtureDef fixtureDef;
+		fixtureDef.shape = &polyShape;
+		fixtureDef.density = 1;
+
+		// Create identical bodies but in different positions
+		for (int i = 0; i < 3; ++i)
+		{
+			dynForcesBodyDef.position.Set(-10 + (i * 10), 20);
+			forcesBodies[i] = m_world->CreateBody(&dynForcesBodyDef);
+			forcesBodies[i]->CreateFixture(&fixtureDef);
+		}
+	}
+
 	void createFrictionTest()
 	{
 		b2BodyDef dynFrictionBodyDef;
@@ -73,7 +148,7 @@ public:
 		polyFrictionFixDef.shape = &polygonShape;
 		polyFrictionFixDef.density = 1;
 		//polyFrictionFixDef.friction = 1;
-		polyFrictionFixDef.restitution = 1;
+		//polyFrictionFixDef.restitution = 1;
 
 		for (int i = 0; i < 4; ++i)
 		{
@@ -94,7 +169,7 @@ public:
 
 		b2EdgeShape edgeLineShape;
 		edgeLineShape.m_vertex1.Set(-15, 0);
-		edgeLineShape.m_vertex2.Set(15, 3);
+		edgeLineShape.m_vertex2.Set(15, 0);
 
 		b2FixtureDef edgeFixture;
 		edgeFixture.shape = &edgeLineShape;
@@ -283,6 +358,18 @@ public:
 	{
 		// Run the default physics and rendering
 		Test::Step(settings);
+
+		if (forceOn)
+		{
+			// Apply gradual force upwards
+			forcesBodies[0]->ApplyForce(b2Vec2(0, 50), forcesBodies[0]->GetWorldPoint(b2Vec2(1, 1)), true);
+		}
+
+		if (torqueOn)
+		{
+			// Apply gradual torque counter-clockwise
+			forcesBodies[0]->ApplyTorque(20, true);
+		}
 
 		// Show some test in the main screen
 		g_debugDraw.DrawString(5, m_textLine, "This is the foo test");
