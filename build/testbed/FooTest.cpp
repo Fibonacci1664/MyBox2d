@@ -71,8 +71,6 @@ public:
 
 	virtual void Keyboard(int key)
 	{
-		
-
 		switch (key)
 		{
 			case 'Q':
@@ -356,6 +354,19 @@ public:
 
 	void Step(Settings& settings)
 	{
+		// Cancel gravity for one of the 3 bodies
+		// This is achieved by simply applying a force equal and opposite to that of
+		// the gravitational pull, this also MUST happen BEFORE the time step
+		// or the simulation will get a chance to apply gravity for a fraction of a second
+		// before cancelling it, resulting in a slow descent each step
+		// Use this method before Box2D v2.1.2
+		//forcesBodies[1]->ApplyForce(forcesBodies[1]->GetMass() * -m_world->GetGravity(), forcesBodies[1]->GetWorldCenter(), true);
+
+		// Use this method after Box2D v2.1.2
+		// 0 will cancel gravity
+		// -1 will reverse gravity
+		forcesBodies[1]->SetGravityScale(0);
+
 		// Run the default physics and rendering
 		Test::Step(settings);
 
