@@ -6,9 +6,17 @@
 #define DEGTORAD 0.0174532925199432957f
 #define RADTODEG 57.295779513082320876f
 
+enum class MoveState
+{
+	MS_STOP, MS_LEFT, MS_RIGHT
+};
+
 class FooTest : public Test
 {
 public:
+	b2Body* constantSpeedBody;
+	MoveState ms;
+
 	// Keep track of 3 bodies
 	b2Body* forcesBodies[3];
 
@@ -32,12 +40,15 @@ public:
 		forceOn = false;
 		torqueOn = false;
 
+		constantSpeedTest();
+		createWalls();
+
 		/*createDynamicCircle();
 		createDynamicPolygon();
 		createDynamicBox();*/
 		//createFrictionTest();
-		forcesImpulseTest();
-		createStaticEdgeLine();
+		/*forcesImpulseTest();
+		createStaticEdgeLine();*/
 
 		/*createStaticBox();
 		createKinematicBox();
@@ -75,19 +86,28 @@ public:
 		{
 			case 'Q':
 			{
-				forceOn = !forceOn;
+				//forceOn = !forceOn;
+				// 
+				// Move left
+				ms = MoveState::MS_LEFT;
 				break;
 			}
 			case 'W':
 			{
 				// Apply immediate force upwards
-				forcesBodies[1]->ApplyLinearImpulse(b2Vec2(0, 50), forcesBodies[1]->GetWorldPoint(b2Vec2(1, 1)), true);
+				//forcesBodies[1]->ApplyLinearImpulse(b2Vec2(0, 50), forcesBodies[1]->GetWorldPoint(b2Vec2(1, 1)), true);
+				
+				// Stop moving
+				ms = MoveState::MS_STOP;
 				break;
 			}
 			case 'E':
 			{
 				// Teleport or 'warp' to a new location
-				forcesBodies[2]->SetTransform(b2Vec2(10, 20), 0);
+				//forcesBodies[2]->SetTransform(b2Vec2(10, 20), 0);
+
+				// Move right
+				ms = MoveState::MS_RIGHT;
 				break;
 			}
 			case 'A':
@@ -107,6 +127,60 @@ public:
 				Test::Keyboard(key);
 			}
 		}
+	}
+
+	void createWalls()
+	{
+		// Add 4 walls
+		// Body def
+		b2BodyDef constSpeedBodyDef;
+		constSpeedBodyDef.type = b2_staticBody;
+		constSpeedBodyDef.position.Set(0, 0);
+		b2Body* staticBody = m_world->CreateBody(&constSpeedBodyDef);
+
+		// Shape def
+		b2PolygonShape polyShape;
+		polyShape.SetAsBox(1, 1);		// A 2x2 rect, half height/width remember
+
+		// Fixture def
+		b2FixtureDef fixtureDef;
+		fixtureDef.shape = &polyShape;
+		fixtureDef.density = 1;
+
+		polyShape.SetAsBox(20, 1, b2Vec2(0, 0), 0);			// Ground
+		staticBody->CreateFixture(&fixtureDef);
+
+		polyShape.SetAsBox(20, 1, b2Vec2(0, 40), 0);		// Roof
+		staticBody->CreateFixture(&fixtureDef);
+
+		polyShape.SetAsBox(1, 20, b2Vec2(-20, 20), 0);		// Left wall
+		staticBody->CreateFixture(&fixtureDef);
+
+		polyShape.SetAsBox(1, 20, b2Vec2(20, 20), 0);		// Right wall
+		staticBody->CreateFixture(&fixtureDef);
+
+		ms = MoveState::MS_STOP;
+	}
+
+	void constantSpeedTest()
+	{
+		// Body def
+		b2BodyDef constSpeedBodyDef;
+		constSpeedBodyDef.type = b2_dynamicBody;
+
+		// Shape def
+		b2PolygonShape polyShape;
+		polyShape.SetAsBox(1, 1);		// A 2x2 rect, half height/width remember
+
+		// Fixture def
+		b2FixtureDef fixtureDef;
+		fixtureDef.shape = &polyShape;
+		fixtureDef.density = 1;
+
+		// Create dynamic body
+		constSpeedBodyDef.position.Set(0, 10);
+		constantSpeedBody = m_world->CreateBody(&constSpeedBodyDef);
+		constantSpeedBody->CreateFixture(&fixtureDef);
 	}
 
 	void forcesImpulseTest()
@@ -352,7 +426,25 @@ public:
 		m_world->DestroyBody(kinematicBody);*/
 	}
 
-	void Step(Settings& settings)
+	void checkForceOn()
+	{
+		if (forceOn)
+		{
+			// Apply gradual force upwards
+			forcesBodies[0]->ApplyForce(b2Vec2(0, 50), forcesBodies[0]->GetWorldPoint(b2Vec2(1, 1)), true);
+		}
+	}
+
+	void checkTorqueOn()
+	{
+		if (torqueOn)
+		{
+			// Apply gradual torque counter-clockwise
+			forcesBodies[0]->ApplyTorque(20, true);
+		}
+	}
+
+	void adjustGravity()
 	{
 		// Cancel gravity for one of the 3 bodies
 		// This is achieved by simply applying a force equal and opposite to that of
@@ -360,27 +452,119 @@ public:
 		// or the simulation will get a chance to apply gravity for a fraction of a second
 		// before cancelling it, resulting in a slow descent each step
 		// Use this method before Box2D v2.1.2
-		//forcesBodies[1]->ApplyForce(forcesBodies[1]->GetMass() * -m_world->GetGravity(), forcesBodies[1]->GetWorldCenter(), true);
+		forcesBodies[1]->ApplyForce(forcesBodies[1]->GetMass() * -m_world->GetGravity(), forcesBodies[1]->GetWorldCenter(), true);
 
 		// Use this method after Box2D v2.1.2
 		// 0 will cancel gravity
 		// -1 will reverse gravity
 		forcesBodies[1]->SetGravityScale(0);
+	}
+
+	void move_DirectVelocity()
+	{
+		b2Vec2 velocity = constantSpeedBody->GetLinearVelocity();
+
+		// Use this for instantaneous accell/decell
+		// Setting velocity directly should not be done if wanting
+		// to simulate a realisitc physics simulation, you should be using forces!
+		/*switch (ms)
+		{
+			case MoveState::MS_LEFT:
+			{
+				velocity.x = -5;
+				break;
+			}
+			case MoveState::MS_STOP:
+			{
+				velocity.x = 0;
+				break;
+			}
+			case MoveState::MS_RIGHT:
+			{
+				velocity.x = 5;
+				break;
+			}
+		}*/
+
+		/*
+		This will increase the velocity linearly by 0.1 per time step to a maximum of 5
+		in the direction of travel - with the default testbed framerate of 60fps the body
+		will take 50 frames or just under a second to reach top speed. When coming to a stop
+		the speed is reduced to 98% of the previous frame's speed, which comes to about
+		0.98^60 = a factor of about 0.3 per second. An advantage of this method is that these
+		acceleration characteristics can be easily tuned.
+
+		// http://www.iforce2d.net/b2dtut/constant-speed
+		*/
+
+		// Use this for a gradual accell/decell
+		switch (ms)
+		{
+		case MoveState::MS_LEFT:  velocity.x = b2Max(velocity.x - 0.1f, -5.0f); break;
+		case MoveState::MS_STOP: velocity.x *= 0.98; break;
+		case MoveState::MS_RIGHT: velocity.x = b2Min(velocity.x + 0.1f, 5.0f); break;
+		}
+
+		constantSpeedBody->SetLinearVelocity(velocity);
+	}
+
+	void move_UsingForces()
+	{
+		b2Vec2 velocity = constantSpeedBody->GetLinearVelocity();
+		float force = 0;
+		float desiredVel = 0;
+		float impulse = 0;
+
+		// Use this for instantaneous accell/decell while remaining true
+		// as a realistic physics simulation
+		/*switch (ms)
+		{
+		case MoveState::MS_LEFT: desiredVel = -5; break;
+		case MoveState::MS_STOP: desiredVel = 0; break;
+		case MoveState::MS_RIGHT: desiredVel = 5; break;
+		}*/
+
+		// Use this also for a gradual accell/decell while remaining true
+		// as a realistic physics simulation
+		switch (ms)
+		{
+		case MoveState::MS_LEFT: desiredVel = b2Max(velocity.x - 0.1f, -5.0f); break;
+		case MoveState::MS_STOP: desiredVel = velocity.x * 0.98f; break;
+		case MoveState::MS_RIGHT: desiredVel = b2Min(velocity.x + 0.1f, 5.0f); break;
+		}
+
+		// Use this for a gradual accell/decell while remaining true
+		// as a realistic physics simulation
+		/*switch (ms)
+		{
+		case MoveState::MS_LEFT:  if (velocity.x > -5) force = -50; break;
+		case MoveState::MS_STOP: force = velocity.x * -10; break;
+		case MoveState::MS_RIGHT: if (velocity.x < 5) force = 50; break;
+		}*/
+
+		float velChange = desiredVel - velocity.x;
+		force = constantSpeedBody->GetMass() * velChange / (1 / 60.0f);		// f = mv/t
+
+		// Disregard the time factor as impulses already account for the length of the simulation timestep
+		impulse = constantSpeedBody->GetMass() * velChange;
+
+		//constantSpeedBody->ApplyForce(b2Vec2(force, 0), constantSpeedBody->GetWorldCenter(), true);
+		constantSpeedBody->ApplyLinearImpulse(b2Vec2(impulse, 0), constantSpeedBody->GetWorldCenter(), true);
+	}
+
+	void Step(Settings& settings)
+	{
+		// Needs to happen before timeStep
+		//adjustGravity();
 
 		// Run the default physics and rendering
 		Test::Step(settings);
 
-		if (forceOn)
-		{
-			// Apply gradual force upwards
-			forcesBodies[0]->ApplyForce(b2Vec2(0, 50), forcesBodies[0]->GetWorldPoint(b2Vec2(1, 1)), true);
-		}
-
-		if (torqueOn)
-		{
-			// Apply gradual torque counter-clockwise
-			forcesBodies[0]->ApplyTorque(20, true);
-		}
+		//checkForceOn();
+		//checkTorqueOn();
+		
+		//move_DirectVelocity();
+		move_UsingForces();
 
 		// Show some test in the main screen
 		g_debugDraw.DrawString(5, m_textLine, "This is the foo test");
