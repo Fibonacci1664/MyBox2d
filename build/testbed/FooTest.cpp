@@ -14,6 +14,9 @@ enum class MoveState
 class FooTest : public Test
 {
 public:
+	b2Vec2 clickedPoint;
+	b2Body* dynRotationBody;
+
 	b2Body* constantSpeedBody;
 	MoveState ms;
 
@@ -39,9 +42,12 @@ public:
 	{
 		forceOn = false;
 		torqueOn = false;
+		clickedPoint = b2Vec2(0, 20);		// Initial starting point
 
-		constantSpeedTest();
-		createWalls();
+		rotationTest();
+
+		//constantSpeedTest();
+		//createWalls();
 
 		/*createDynamicCircle();
 		createDynamicPolygon();
@@ -55,6 +61,43 @@ public:
 		setTransform();
 		setVelocities();*/
 		//destroyBodies();
+	}
+
+	void MouseDown(const b2Vec2& point)
+	{
+		// Store the last mouse down position
+		clickedPoint = point;
+
+		// Carry out default(normal) behaviour
+		Test::MouseDown(point);
+	}
+
+	void rotationTest()
+	{
+		b2BodyDef bodyDef;
+		bodyDef.type = b2_dynamicBody;
+
+		b2PolygonShape polyShape;
+		b2Vec2 vertices[6];
+
+		for (int i = 0; i < 6; ++i)
+		{
+			float angle = -i / 6.0f * 360 * DEGTORAD;
+			vertices[i].Set(sinf(angle), cosf(angle));
+		}
+
+		vertices[0].Set(0, 4);		// Change one o fthe verices to be pointy
+		polyShape.Set(vertices, 6);
+
+		b2FixtureDef fixDef;
+		fixDef.shape = &polyShape;
+		fixDef.density = 1;
+
+		bodyDef.position.Set(0, 10);
+		dynRotationBody = m_world->CreateBody(&bodyDef);
+		dynRotationBody->CreateFixture(&fixDef);
+
+		m_world->SetGravity(b2Vec2(0, 0));
 	}
 
 	void cleanUpFixtures()
@@ -128,6 +171,8 @@ public:
 			}
 		}
 	}
+
+	
 
 	void createWalls()
 	{
@@ -560,11 +605,13 @@ public:
 		// Run the default physics and rendering
 		Test::Step(settings);
 
+		g_debugDraw.DrawCircle(b2Vec2(clickedPoint.x, clickedPoint.y), 0.2, b2Color(0, 1.0, 0));
+
 		//checkForceOn();
 		//checkTorqueOn();
 		
 		//move_DirectVelocity();
-		move_UsingForces();
+		//move_UsingForces();
 
 		// Show some test in the main screen
 		g_debugDraw.DrawString(5, m_textLine, "This is the foo test");
