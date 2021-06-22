@@ -597,6 +597,40 @@ public:
 		constantSpeedBody->ApplyLinearImpulse(b2Vec2(impulse, 0), constantSpeedBody->GetWorldCenter(), true);
 	}
 
+	void getRotationalInfo()
+	{
+		float bodyAngle = dynRotationBody->GetAngle();
+		b2Vec2 toTarget = clickedPoint - dynRotationBody->GetPosition();
+		float desiredAngle = atan2f(-toTarget.x, toTarget.y);		// This is -x/y instead of typical tan function of y/x, this is so 0 deg is north, not east
+		float totalRotation = desiredAngle - bodyAngle;
+		float change = 1 * DEGTORAD;		// Allow 1 geree rotation per time step
+		float newAngle = bodyAngle + b2Min(change, b2Max(-change, totalRotation));
+		float nextAngle = bodyAngle + dynRotationBody->GetAngularVelocity() / 4.0f;	// Smaller numer, means faster tracking to clicked point direction
+		totalRotation = desiredAngle - nextAngle;
+
+		while (totalRotation < -180 * DEGTORAD)
+		{
+			totalRotation += 360 * DEGTORAD;
+		}
+
+		while (totalRotation > 180 * DEGTORAD)
+		{
+			totalRotation -= 360 * DEGTORAD;
+		}
+
+		// Setting transform and angle directly means the body is not participating in the physics sim correctly
+		//dynRotationBody->SetTransform(dynRotationBody->GetPosition(), desiredAngle);
+
+		// Apply rotation properly by applying torque
+		dynRotationBody->ApplyTorque(totalRotation < 0 ? -10 : 10, true);
+		//dynRotationBody->SetAngularVelocity(0);
+
+		g_debugDraw.DrawString(5, m_textLine, "Body Angle: %.3f", bodyAngle * RADTODEG);
+		m_textLine += 15;
+		g_debugDraw.DrawString(5, m_textLine, "Target Angel: %.3f", desiredAngle * RADTODEG);
+		m_textLine += 15;
+	}
+
 	void Step(Settings& settings)
 	{
 		// Needs to happen before timeStep
@@ -623,6 +657,8 @@ public:
 		m_textLine += 15;
 		g_debugDraw.DrawString(5, m_textLine, "Velocity: %.3f Angular Vel: %.3f", vel.x, vel.y, angularVel * RADTODEG);
 		m_textLine += 15;
+
+		getRotationalInfo();
 	}
 
 	static Test* Create()
