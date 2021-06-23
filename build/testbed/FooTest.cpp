@@ -14,6 +14,7 @@ enum class MoveState
 class FooTest : public Test
 {
 public:
+	int remainingJumpSteps;
 	b2Vec2 clickedPoint;
 	b2Body* dynRotationBody;
 
@@ -43,11 +44,12 @@ public:
 		forceOn = false;
 		torqueOn = false;
 		clickedPoint = b2Vec2(0, 20);		// Initial starting point
+		remainingJumpSteps = 0;
 
-		rotationTest();
+		//rotationTest();
 
-		//constantSpeedTest();
-		//createWalls();
+		constantSpeedTest();
+		createWalls();
 
 		/*createDynamicCircle();
 		createDynamicPolygon();
@@ -164,6 +166,27 @@ public:
 				forcesBodies[1]->ApplyAngularImpulse(20, true);
 				break;
 			}
+			case 'J':
+			{
+				// Setting the velocity directly, i.e. not participating in the physics sim correctly
+				b2Vec2 vel = constantSpeedBody->GetLinearVelocity();
+				vel.y = 10;		// Upwards - x doesn't change
+				constantSpeedBody->SetLinearVelocity(vel);
+				break;
+			}
+			case 'K':
+			{
+				remainingJumpSteps = 6;		// 1/10th of a second
+				break;
+			}
+			case 'L':
+			{
+				// This uses an impulse to jump which is more than likely what you want
+				// so that all force is applied in only one time step, much like a real jump
+				float impulse = constantSpeedBody->GetMass() * 10;
+				constantSpeedBody->ApplyLinearImpulse(b2Vec2(0, impulse), constantSpeedBody->GetWorldCenter(), true);
+				break;
+			}
 			default:
 			{
 				// Run default behaviour
@@ -171,8 +194,6 @@ public:
 			}
 		}
 	}
-
-	
 
 	void createWalls()
 	{
@@ -631,21 +652,45 @@ public:
 		m_textLine += 15;
 	}
 
+	void jump()
+	{
+		// Apply the forces only when there are time steps remaining and not for the entire frame
+		/*if (remainingJumpSteps > 0)
+		{
+			constantSpeedBody->ApplyForce(b2Vec2(0, 500), constantSpeedBody->GetWorldCenter(), true);
+			--remainingJumpSteps;
+		}*/
+
+		// Use this is you want to apply the force evenly across ALL time steps
+		if (remainingJumpSteps > 0)
+		{
+			// Change vel by 10 in one time step
+			float force = constantSpeedBody->GetMass() * 10 / (1 / 60.0f);		// f = mv/t
+
+			// Spread this over 6 time steps
+			force /= 6.0f;
+			constantSpeedBody->ApplyForce(b2Vec2(0, force), constantSpeedBody->GetWorldCenter(), true);
+			--remainingJumpSteps;
+		}
+	}
+
 	void Step(Settings& settings)
 	{
+		constantSpeedBody->SetFixedRotation(true);		// prevent the jumping body from being able to rotate
 		// Needs to happen before timeStep
 		//adjustGravity();
 
 		// Run the default physics and rendering
 		Test::Step(settings);
 
-		g_debugDraw.DrawCircle(b2Vec2(clickedPoint.x, clickedPoint.y), 0.2, b2Color(0, 1.0, 0));
+		//g_debugDraw.DrawCircle(b2Vec2(clickedPoint.x, clickedPoint.y), 0.2, b2Color(0, 1.0, 0));
 
 		//checkForceOn();
 		//checkTorqueOn();
 		
 		//move_DirectVelocity();
-		//move_UsingForces();
+		move_UsingForces();
+		jump();
 
 		// Show some test in the main screen
 		g_debugDraw.DrawString(5, m_textLine, "This is the foo test");
@@ -655,10 +700,10 @@ public:
 
 		g_debugDraw.DrawString(5, m_textLine, "XPos: %.3f  YPos: %.3f Angle: %.3f", pos.x, pos.y, angle * RADTODEG);
 		m_textLine += 15;
-		g_debugDraw.DrawString(5, m_textLine, "Velocity: %.3f Angular Vel: %.3f", vel.x, vel.y, angularVel * RADTODEG);
-		m_textLine += 15;
+		/*g_debugDraw.DrawString(5, m_textLine, "Velocity: %.3f Angular Vel: %.3f", vel.x, vel.y, angularVel * RADTODEG);
+		m_textLine += 15;*/
 
-		getRotationalInfo();
+		//getRotationalInfo();
 	}
 
 	static Test* Create()
