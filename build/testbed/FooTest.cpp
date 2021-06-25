@@ -47,7 +47,6 @@ public:
 		remainingJumpSteps = 0;
 
 		//rotationTest();
-
 		constantSpeedTest();
 		createWalls();
 
