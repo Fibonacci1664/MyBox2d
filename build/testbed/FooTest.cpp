@@ -2,6 +2,7 @@
 //#define FOOTEST_H
 
 #include "test.h"
+#include <draw.h>
 
 #define DEGTORAD 0.0174532925199432957f
 #define RADTODEG 57.295779513082320876f
@@ -11,9 +12,44 @@ enum class MoveState
 	MS_STOP, MS_LEFT, MS_RIGHT
 };
 
+//class FooDraw : public DebugDraw
+//{
+//public:
+//	void DrawPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color) {}
+//	void DrawSolidPolygon(const b2Vec2* vertices, int32 vertexCount, const b2Color& color)
+//	{
+//		b2Color fillColor(0.5f * color.r, 0.5f * color.g, 0.5f * color.b, 0.5f);
+//
+//		for (int32 i = 1; i < vertexCount - 1; ++i)
+//		{
+//			m_triangles->Vertex(vertices[0], fillColor);
+//			m_triangles->Vertex(vertices[i], fillColor);
+//			m_triangles->Vertex(vertices[i + 1], fillColor);
+//		}
+//
+//		b2Vec2 p1 = vertices[vertexCount - 1];
+//		for (int32 i = 0; i < vertexCount; ++i)
+//		{
+//			b2Vec2 p2 = vertices[i];
+//			m_lines->Vertex(p1, color);
+//			m_lines->Vertex(p2, color);
+//			p1 = p2;
+//		}
+//	}
+//	void DrawCircle(const b2Vec2& center, float radius, const b2Color& color) {}
+//	void DrawSolidCircle(const b2Vec2& center, float radius, const b2Vec2& axis, const b2Color& color) {}
+//	void DrawSegment(const b2Vec2& p1, const b2Vec2& p2, const b2Color& color) {}
+//	void DrawTransform(const b2Transform& xf) {}
+//	void DrawPoint(const b2Vec2& p, float size, const b2Color& color) {}
+//};
+
+//FooDraw fooDrawInstance;
+//DebugDraw* debugDraw = new DebugDraw;
+
 class FooTest : public Test
 {
 public:
+
 	int remainingJumpSteps;
 	b2Vec2 clickedPoint;
 	b2Body* dynRotationBody;
@@ -45,6 +81,9 @@ public:
 		torqueOn = false;
 		clickedPoint = b2Vec2(0, 20);		// Initial starting point
 		remainingJumpSteps = 0;
+
+		/*m_world->SetDebugDraw(&fooDrawInstance);
+		fooDrawInstance.SetFlags(b2Draw::e_shapeBit);*/
 
 		//rotationTest();
 		constantSpeedTest();
