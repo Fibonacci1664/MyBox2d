@@ -49,7 +49,6 @@ enum class MoveState
 class FooTest : public Test
 {
 public:
-
 	int remainingJumpSteps;
 	b2Vec2 clickedPoint;
 	b2Body* dynRotationBody;
